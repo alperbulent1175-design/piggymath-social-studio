@@ -22,6 +22,7 @@ export default function App() {
   const [showWatermark, setShowWatermark] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [publishError, setPublishError] = useState(null);
 
   const canvasRef = useRef(null);
 
@@ -38,7 +39,7 @@ export default function App() {
     try {
       const dataUrl = await toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2 });
       const link = document.createElement('a');
-      link.download = `piggymath-${postData.badge.toLowerCase().replace(/\s+/g, '-')}-${selectedFormat.id}.png`;
+      link.download = `piggymath-${postData.badge ? postData.badge.toLowerCase().replace(/\s+/g, '-') : 'post'}-${selectedFormat.id}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -46,13 +47,30 @@ export default function App() {
     }
   };
 
-  const handleQuickPublish = () => {
+  const handleQuickPublish = async () => {
     setPublishing(true);
-    setTimeout(() => {
+    setPublishError(null);
+    try {
+      const res = await fetch('/api/publish-now', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ presetId: postData.id })
+      });
+      const data = await res.json();
+      console.log('Live publish response:', data);
+
+      if (data.success) {
+        setPublishSuccess(true);
+        setTimeout(() => setPublishSuccess(false), 5000);
+      } else {
+        setPublishError(data.message || 'Publishing failed');
+      }
+    } catch (err) {
+      console.error('Publish error:', err);
+      setPublishError('Network error connecting to API');
+    } finally {
       setPublishing(false);
-      setPublishSuccess(true);
-      setTimeout(() => setPublishSuccess(false), 3000);
-    }, 1500);
+    }
   };
 
   return (
@@ -66,7 +84,13 @@ export default function App() {
 
       {publishSuccess && (
         <div className="notification-banner success">
-          <span>🎉 Post successfully queued & dispatched to Instagram & Pinterest!</span>
+          <span>🎉 Post live published & dispatched to Instagram (@piggymath) & Pinterest!</span>
+        </div>
+      )}
+
+      {publishError && (
+        <div className="notification-banner error">
+          <span>⚠️ {publishError}</span>
         </div>
       )}
 

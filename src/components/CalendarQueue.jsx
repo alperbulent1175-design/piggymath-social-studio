@@ -5,14 +5,26 @@ import { Calendar, Play, Pause, Send, CheckCircle2, Clock, Instagram, Pin, Refre
 export default function CalendarQueue() {
   const [isAutoActive, setIsAutoActive] = useState(true);
   const [publishingId, setPublishingId] = useState(null);
-  const [publishedIds, setPublishedIds] = useState(['se-tax-trap-153']);
+  const [publishedIds, setPublishedIds] = useState([]);
 
-  const handleTriggerPublish = (presetId) => {
+  const handleTriggerPublish = async (presetId) => {
     setPublishingId(presetId);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/publish-now', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ presetId: presetId })
+      });
+      const data = await res.json();
+      console.log('Calendar publish triggered:', data);
+      if (data.success) {
+        setPublishedIds((prev) => [...prev, presetId]);
+      }
+    } catch (err) {
+      console.error('Error triggering publish:', err);
+    } finally {
       setPublishingId(null);
-      setPublishedIds((prev) => [...prev, presetId]);
-    }, 1500);
+    }
   };
 
   const scheduleDays = [
