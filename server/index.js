@@ -21,10 +21,7 @@ app.use(express.json());
 const DEFAULT_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNOS09aQUNxRFpCaDFpdTJGRHp2UElaQ2RJYlM2MDQ3czIzdFkxWTNjSW1vSEtxcnZIR3FodG85SkFHcFB0bVU0OEFVbkt6WkJaQ2NVSDFPYlZITHh1c294U1laQ1dHYm53MUlXTmZKSmlvRnB0dVl5dmpXSWR5QkdmdFJ0S2t6Rk1jVHZIaFlKTUQ5enpaQkxTM0xJWUFmWkJIR2pHdmhkbzcxRTliVzdzV3ZaQVF3OUhkeE9ucVM2eG4xWkJ0OWRvaVROVlZLZWpaQXV2R2o3SVNIRVNuaVQxUFVGRENOYVh0WTVTYVBhWkJSaTE2TmFSMTFsc1c5SnZ4UGltZXE3ejBMcXdUWXBOa2lzMzZPN1NWNHlzYTVUWUpJc3ZaQkF0a29aRA==', 'base64').toString('utf-8');
 const DEFAULT_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FAG0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
 
-// Serve static frontend files from 'dist' directory
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// API Routes
+// API Routes FIRST
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'PiggyMath Auto-Post Engine 24/7' });
 });
@@ -34,9 +31,11 @@ app.get('/api/presets', (req, res) => {
 });
 
 // Dynamic Visual Post Infographic Image Route
-app.get('/api/post-image/:presetId.svg', (req, res) => {
-  const svgContent = renderPostSvg(req.params.presetId);
+app.get('/api/post-image/:presetId', (req, res) => {
+  const cleanId = req.params.presetId.replace(/\.svg|\.png/, '');
+  const svgContent = renderPostSvg(cleanId);
   res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(svgContent);
 });
 
@@ -51,7 +50,7 @@ app.post('/api/publish-now', async (req, res) => {
   // Dynamic visual infographic image URL for Instagram & Pinterest
   const host = req.get('host') || 'piggymath-social-studio.onrender.com';
   const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const visualImageUrl = `${protocol}://${host}/api/post-image/${preset.id}.svg`;
+  const visualImageUrl = `${protocol}://${host}/api/post-image/${preset.id}`;
 
   console.log(`[API Publish-Now] Publishing VISUAL INFOGRAPHIC image: ${visualImageUrl}`);
 
@@ -78,6 +77,9 @@ app.post('/api/publish-now', async (req, res) => {
     pinterest: pinRes
   });
 });
+
+// Serve static frontend files from 'dist' directory
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Fallback to index.html for Single Page Application
 app.get('*', (req, res) => {
