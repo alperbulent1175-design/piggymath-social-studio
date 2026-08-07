@@ -1,4 +1,4 @@
-// Server-Side Content Library for Daily Auto-Poster
+// Server-Side Content Library for Daily Auto-Poster (365-Day Cycle Engine)
 
 export const DAILY_TAX_CONTENT = [
   {
@@ -36,5 +36,41 @@ export const DAILY_TAX_CONTENT = [
     igCaption: '📅 Don\'t let IRS underpayment penalties surprise you. Save these quarterly tax due dates! #PiggyMath #QuarterlyTaxes',
     pinTitle: 'IRS Quarterly Estimated Tax Payment Deadlines',
     pinDescription: 'Official deadlines for freelancer quarterly estimated taxes. Calculate your quarterly amount at PiggyMath.com'
+  },
+  {
+    id: 'day-4-home-office',
+    badge: 'TAX WRITE-OFFS',
+    hookTitle: 'Do you work from home? Don\'t leave money on the table! 🏠',
+    mainHeading: '2 Ways to Claim the Home Office Tax Deduction',
+    subtitle: 'Simplified Method vs Actual Expenses Method.',
+    ctaText: 'Calculate home office deduction at piggymath.com 🏡',
+    theme: 'mint',
+    igCaption: '🏡 Working from home? Save hundreds on taxes with the Home Office Deduction! Calculate at piggymath.com #PiggyMath #TaxWriteOffs',
+    pinTitle: 'Home Office Tax Deduction Guide for Remote Workers',
+    pinDescription: 'How to claim home office deductions as a freelancer or remote worker. Free calculator at PiggyMath.com'
+  },
+  {
+    id: 'day-5-hourly-rate',
+    badge: 'PRICING FORMULA',
+    hookTitle: 'How to calculate your true hourly rate as a freelancer ⏱️',
+    mainHeading: 'Don\'t Divide Desired Salary by 2,000 Hours!',
+    subtitle: 'Factor in non-billable hours, taxes, and health insurance.',
+    ctaText: 'Find your target hourly rate at piggymath.com ⏱️',
+    theme: 'navy',
+    igCaption: '⏱️ Stop undercharging for freelance services! Calculate your true hourly rate including taxes at piggymath.com #PiggyMath #FreelanceRate',
+    pinTitle: 'True Freelance Hourly Rate Calculation Formula',
+    pinDescription: 'Formula to calculate freelancer hourly rate including taxes and overhead. PiggyMath.com'
+  },
+  {
+    id: 'day-6-compound-interest',
+    badge: 'WEALTH BUILDING',
+    hookTitle: 'How $200/month turns into $300,000+ with Compound Interest 📈',
+    mainHeading: 'The Power of Starting 10 Years Earlier',
+    subtitle: 'Consistency beats timing. Exponential compounding over time.',
+    ctaText: 'Simulate compound growth free at piggymath.com 📈',
+    theme: 'pink',
+    igCaption: '📈 Compound interest is exponential wealth growth over time! Simulate your savings growth at piggymath.com #PiggyMath #CompoundInterest',
+    pinTitle: 'Compound Interest Growth Chart 10-30 Years',
+    pinDescription: 'Visual comparison of compound interest growth over time. Free calculator at PiggyMath.com'
   }
 ];

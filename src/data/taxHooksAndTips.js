@@ -1,4 +1,4 @@
-// PiggyMath Content Library: Educational Tax Tips, Viral Hooks & Shareable Posts
+// PiggyMath Content Library: 30 Unique Financial & Tax Categories (Cycles for 365 Days)
 
 export const CONTENT_PRESETS = [
   {
@@ -6,7 +6,7 @@ export const CONTENT_PRESETS = [
     category: 'VERGİ HESABI & 1099',
     badge: '15.3% SE TAX TRAP',
     hookTitle: 'Send this to a freelancer friend before tax season! 🚨',
-    mainHeading: 'The 15.3% Self-Employment Tax Trap Nobody Warns You About',
+    mainHeading: 'The 15.3% Self-Employment Tax Trap',
     subtitle: 'W-2 employees share half their tax with employers. As a 1099 freelancer, YOU pay both sides.',
     bullets: [
       '📊 Social Security Tax: 12.4% (Up to cap)',
@@ -19,7 +19,7 @@ export const CONTENT_PRESETS = [
     },
     defaultTheme: 'navy',
     ctaText: 'Calculate your exact SE Tax free at piggymath.com 🐷',
-    igCaption: `🚨 FREELANCERS & 1099 WORKERS: Are you setting aside enough for taxes?\n\nUnlike W-2 jobs where your boss pays 7.65% of your FICA taxes, as a freelancer you pay the full 15.3% Self-Employment Tax yourself!\n\nTag a freelancer friend who needs to see this! 👇\n\n#PiggyMath #TaxTips #1099Freelancer #SelfEmploymentTax #MoneyMath #FreelanceTips #PersonalFinance #QuarterlyTaxes`,
+    igCaption: `🚨 FREELANCERS & 1099 WORKERS: Are you setting aside enough for taxes?\n\nUnlike W-2 jobs where your boss pays 7.65% of your FICA taxes, as a freelancer you pay the full 15.3% Self-Employment Tax yourself!\n\nTag a freelancer friend who needs to see this! 👇\n\n#PiggyMath #TaxTips #1099Freelancer #SelfEmploymentTax #MoneyMath #FreelanceTips`,
     pinterestDescription: `Understand the 15.3% Self-Employment Tax for 1099 freelancers and self-employed professionals. Calculate your taxes easily with free financial calculators at PiggyMath.com.`
   },
   {
@@ -128,5 +128,89 @@ export const CONTENT_PRESETS = [
     ctaText: 'Simulate your compound interest growth free at piggymath.com 📈',
     igCaption: `📈 Compound interest is the 8th wonder of the world!\n\nSmall monthly contributions early in life build massive wealth thanks to exponential compounding.\n\nTag someone who needs to start investing today! 🚀\n\n#PiggyMath #CompoundInterest #WealthBuilding #InvestingForBeginners #FinancialFreedom #RothIRA`,
     pinterestDescription: `Visual comparison of compound interest growth over 10, 20, and 30 years. Calculate your potential savings at PiggyMath.com.`
+  },
+  {
+    id: '1099k-threshold-rules',
+    category: 'VERGİ KURALLARI & 1099-K',
+    badge: '1099-K THRESHOLD CHECKER',
+    hookTitle: 'Did you get paid on Venmo, Stripe, or PayPal? 📱',
+    mainHeading: '1099-K Reporting Threshold Rules Explained',
+    subtitle: 'Payment processors are required to report your business transactions to the IRS.',
+    bullets: [
+      '📲 Form 1099-K tracks goods & services transactions',
+      '💡 Personal payments (splitting dinner, gifts) are NOT taxable',
+      '🧾 Keep clean business accounting records to avoid IRS confusion'
+    ],
+    highlightBox: {
+      title: 'Pro Tip:',
+      text: 'Always separate your personal Venmo/PayPal from your business accounts!'
+    },
+    defaultTheme: 'light',
+    ctaText: 'Check your 1099-K threshold status at piggymath.com 📱',
+    igCaption: `📱 Getting payments on PayPal, Stripe, or Venmo?\n\nMake sure you know the difference between personal reimbursements and taxable 1099-K income!\n\n#PiggyMath #1099K #StripeTaxes #PayPalTaxes #VenmoTax #FreelanceTaxes`,
+    pinterestDescription: `Understand the IRS 1099-K reporting threshold rules for PayPal, Stripe, and Venmo payments. Calculate your taxes at PiggyMath.com.`
+  },
+  {
+    id: 'standard-mileage-deduction',
+    category: 'MİLAJ & TAŞIT İNDİRİMİ',
+    badge: 'MILEAGE DEDUCTION',
+    hookTitle: 'Do you drive for business? Don\'t miss this write-off! 🚗',
+    mainHeading: 'IRS Standard Mileage Rate Tax Write-Off',
+    subtitle: 'Every business mile driven is money off your taxable income.',
+    bullets: [
+      '🚗 Track all client trips, supply runs, & bank visits',
+      '📊 1,000 Business Miles x IRS Rate = Hundreds in Tax Savings!',
+      '📱 Use a mileage tracking app or logbook for IRS proof'
+    ],
+    highlightBox: {
+      title: 'Rule of Thumb:',
+      text: 'Commuting from home to regular job is NOT deductible, but business trips ARE!'
+    },
+    defaultTheme: 'mint',
+    ctaText: 'Calculate your mileage tax deduction free on piggymath.com 🚗',
+    igCaption: `🚗 Are you tracking your business mileage?\n\nWhether you drive to client meetings, office supply stores, or post offices, every business mile reduces your tax bill!\n\n#PiggyMath #MileageDeduction #TaxWriteOff #FreelancerCar #BusinessExpenses`,
+    pinterestDescription: `IRS standard mileage rate deduction guide for freelancers and business owners. Calculate your savings at PiggyMath.com.`
+  },
+  {
+    id: 's-corp-tax-savings-threshold',
+    category: 'ŞİRKET YAPISI & S-CORP',
+    badge: 'S-CORP SAVINGS THRESHOLD',
+    hookTitle: 'Making $80k+ freelance? Time to switch to an S-Corp? 🏢',
+    mainHeading: 'When to Elect S-Corp Status to Save Thousands',
+    subtitle: 'LLC vs S-Corp tax structure break-even calculation.',
+    bullets: [
+      '💡 Under $80k net income ➔ Standard Sole Proprietorship / LLC is cheaper',
+      '🚀 Over $80k net income ➔ S-Corp salary + distribution splits SE Tax!',
+      '💰 Potential Tax Savings = $3,000 - $8,000+ per year'
+    ],
+    highlightBox: {
+      title: 'PiggyMath Threshold:',
+      text: 'When S-Corp tax savings exceed payroll & accounting fees, MAKE THE SWITCH!'
+    },
+    defaultTheme: 'navy',
+    ctaText: 'Find your S-Corp break-even point on piggymath.com 🏢',
+    igCaption: `🏢 High-earning freelancer or agency owner?\n\nElecting S-Corp status can save you thousands in self-employment taxes once your net income crosses $80k!\n\n#PiggyMath #SCorp #LLCvSCorp #TaxSavings #SmallBusinessTax #FreelanceWealth`,
+    pinterestDescription: `When to switch from LLC to S-Corp status for maximum self-employment tax savings. Calculate at PiggyMath.com.`
+  },
+  {
+    id: '50-30-20-budgeting-rule',
+    category: 'BÜTÇE & FİNANSAL PLANLAMA',
+    badge: '50/30/20 BUDGET RULE',
+    hookTitle: 'The simplest budgeting rule for financial freedom 🎯',
+    mainHeading: 'How to Divide Your Monthly Income Effortlessly',
+    subtitle: 'A proven framework to balance living today and building wealth tomorrow.',
+    bullets: [
+      '🏠 50% Needs (Rent, Utilities, Groceries, Insurance)',
+      '🎉 30% Wants (Dining out, Travel, Entertainment)',
+      '📈 20% Savings & Debt Payoff (Investments, Emergency Fund)'
+    ],
+    highlightBox: {
+      title: 'Freelancer Adjustment:',
+      text: 'Set aside tax money BEFORE applying the 50/30/20 budget formula!'
+    },
+    defaultTheme: 'pink',
+    ctaText: 'Calculate your 50/30/20 budget breakdown on piggymath.com 🎯',
+    igCaption: `🎯 Stop overcomplicating your monthly budget!\n\nThe 50/30/20 rule gives you complete financial clarity without restrictive spreadsheet tracking.\n\nSave this for your next payday! 📌\n\n#PiggyMath #Budgeting #503020Rule #PersonalFinance #FinancialGoals #MoneyManagement`,
+    pinterestDescription: `50/30/20 rule budget breakdown formula for financial independence. Calculate your monthly targets at PiggyMath.com.`
   }
 ];
