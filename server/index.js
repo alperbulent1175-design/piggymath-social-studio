@@ -32,16 +32,20 @@ app.post('/api/publish-now', async (req, res) => {
   const { presetId } = req.body;
   const preset = DAILY_TAX_CONTENT.find(p => p.id === presetId) || DAILY_TAX_CONTENT[0];
 
+  const igUserId = process.env.IG_USER_ID || '17841438053748611';
+  const igToken = process.env.IG_ACCESS_TOKEN;
+  const pinToken = process.env.PINTEREST_ACCESS_TOKEN;
+
   const igRes = await publishToInstagram({
-    igUserId: process.env.IG_USER_ID,
-    accessToken: process.env.IG_ACCESS_TOKEN,
+    igUserId: igUserId,
+    accessToken: igToken,
     imageUrl: 'https://piggymath.com/assets/og.png',
     caption: preset.igCaption
   });
 
   const pinRes = await publishToPinterest({
-    accessToken: process.env.PINTEREST_ACCESS_TOKEN,
-    boardId: process.env.PINTEREST_BOARD_ID,
+    accessToken: pinToken,
+    boardId: process.env.PINTEREST_BOARD_ID || 'PiggyMath Financial Tips',
     imageUrl: 'https://piggymath.com/assets/og.png',
     title: preset.pinTitle,
     description: preset.pinDescription
