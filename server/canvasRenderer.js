@@ -26,18 +26,18 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
   const subtitle = (preset.subtitle || 'Free financial tools at piggymath.com').replace(/&/g, '&amp;');
   const ctaText = (preset.ctaText || 'Calculate free at piggymath.com 🐷').replace(/&/g, '&amp;');
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" style="background-color: ${theme.bg}; font-family: 'sans-serif';">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" style="background-color: ${theme.bg}; font-family: 'DejaVu Sans', 'Liberation Sans', 'Arial', sans-serif;">
     <rect width="1080" height="1080" fill="${theme.bg}"/>
 
     <!-- Header Section -->
     <g transform="translate(60, 60)">
       <rect width="64" height="64" rx="16" fill="${theme.accent}"/>
-      <text x="32" y="44" font-size="36" text-anchor="middle">🐷</text>
+      <text x="32" y="44" font-size="36" text-anchor="middle" font-family="'DejaVu Sans', sans-serif">🐷</text>
       
-      <text x="84" y="46" font-size="40" font-weight="bold" fill="${theme.textPrimary}">Piggy<tspan fill="${theme.accent}">Math</tspan></text>
+      <text x="84" y="46" font-size="40" font-weight="bold" fill="${theme.textPrimary}" font-family="'DejaVu Sans', sans-serif">Piggy<tspan fill="${theme.accent}">Math</tspan></text>
 
       <rect x="680" y="8" width="280" height="48" rx="24" fill="${theme.accent}" fill-opacity="0.2" stroke="${theme.accent}" stroke-width="2"/>
-      <text x="820" y="40" font-size="18" font-weight="bold" fill="${theme.accent}" text-anchor="middle">${badgeText}</text>
+      <text x="820" y="40" font-size="18" font-weight="bold" fill="${theme.accent}" text-anchor="middle" font-family="'DejaVu Sans', sans-serif">${badgeText}</text>
     </g>
 
     <!-- Divider -->
@@ -46,13 +46,13 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
     <!-- Hook Banner -->
     <g transform="translate(60, 185)">
       <rect width="960" height="70" rx="14" fill="${theme.accent}" fill-opacity="0.15" stroke="${theme.accent}" stroke-opacity="0.4" stroke-width="2"/>
-      <text x="30" y="44" font-size="24" font-weight="bold" fill="${theme.accent}">💡 ${hookTitle}</text>
+      <text x="30" y="44" font-size="24" font-weight="bold" fill="${theme.accent}" font-family="'DejaVu Sans', sans-serif">💡 ${hookTitle}</text>
     </g>
 
     <!-- Main Title -->
     <g transform="translate(60, 310)">
-      <text x="0" y="35" font-size="42" font-weight="bold" fill="${theme.textPrimary}">${mainHeading}</text>
-      <text x="0" y="85" font-size="24" fill="${theme.textSecondary}">${subtitle}</text>
+      <text x="0" y="35" font-size="42" font-weight="bold" fill="${theme.textPrimary}" font-family="'DejaVu Sans', sans-serif">${mainHeading}</text>
+      <text x="0" y="85" font-size="24" fill="${theme.textSecondary}" font-family="'DejaVu Sans', sans-serif">${subtitle}</text>
     </g>
 
     <!-- Main Content Card (Bullet Points) -->
@@ -60,32 +60,32 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
       <rect width="960" height="360" rx="20" fill="${theme.cardBg}" stroke="${theme.accent}" stroke-opacity="0.3" stroke-width="2"/>
       
       <!-- Bullet 1 -->
-      <text x="40" y="70" font-size="26" font-weight="bold" fill="${theme.textPrimary}">• 📊 Social Security Tax: 12.4% (Up to income cap)</text>
+      <text x="40" y="70" font-size="26" font-weight="bold" fill="${theme.textPrimary}" font-family="'DejaVu Sans', sans-serif">• 📊 Social Security Tax: 12.4% (Up to income cap)</text>
       <line x1="40" y1="100" x2="920" y2="100" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="1"/>
 
       <!-- Bullet 2 -->
-      <text x="40" y="150" font-size="26" font-weight="bold" fill="${theme.textPrimary}">• 🏥 Medicare Tax: 2.9% (Unlimited income)</text>
+      <text x="40" y="150" font-size="26" font-weight="bold" fill="${theme.textPrimary}" font-family="'DejaVu Sans', sans-serif">• 🏥 Medicare Tax: 2.9% (Unlimited income)</text>
       <line x1="40" y1="180" x2="920" y2="180" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="1"/>
 
       <!-- Bullet 3 -->
-      <text x="40" y="230" font-size="26" font-weight="bold" fill="${theme.accent}">• 💡 Total SE Tax = 15.3% ON TOP of regular income tax!</text>
+      <text x="40" y="230" font-size="26" font-weight="bold" fill="${theme.accent}" font-family="'DejaVu Sans', sans-serif">• 💡 Total SE Tax = 15.3% ON TOP of regular income tax!</text>
 
       <!-- Highlight Formula Box -->
       <rect x="40" y="270" width="880" height="60" rx="10" fill="${theme.accent}" fill-opacity="0.2"/>
-      <text x="60" y="308" font-size="22" font-weight="bold" fill="${theme.accent}">Formula: Gross 1099 Income x 92.35% x 15.3% = Your SE Tax</text>
+      <text x="60" y="308" font-size="22" font-weight="bold" fill="${theme.accent}" font-family="'DejaVu Sans', sans-serif">Formula: Gross 1099 Income x 92.35% x 15.3% = Your SE Tax</text>
     </g>
 
     <!-- Footer Bar -->
     <g transform="translate(60, 960)">
       <line x1="0" y1="0" x2="960" y2="0" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="2"/>
       
-      <text x="0" y="45" font-size="32">🐷</text>
-      <text x="50" y="42" font-size="24" font-weight="bold" fill="${theme.accent}">${ctaText}</text>
-      <text x="50" y="68" font-size="18" fill="${theme.textSecondary}">www.piggymath.com</text>
+      <text x="0" y="45" font-size="32" font-family="'DejaVu Sans', sans-serif">🐷</text>
+      <text x="50" y="42" font-size="24" font-weight="bold" fill="${theme.accent}" font-family="'DejaVu Sans', sans-serif">${ctaText}</text>
+      <text x="50" y="68" font-size="18" fill="${theme.textSecondary}" font-family="'DejaVu Sans', sans-serif">www.piggymath.com</text>
 
       <!-- Save & Share Badge -->
       <rect x="780" y="20" width="180" height="48" rx="24" fill="${theme.cardBg}" stroke="${theme.textSecondary}" stroke-opacity="0.3" stroke-width="2"/>
-      <text x="870" y="50" font-size="20" font-weight="bold" fill="${theme.textPrimary}" text-anchor="middle">📌 Save &amp; Share</text>
+      <text x="870" y="50" font-size="20" font-weight="bold" fill="${theme.textPrimary}" text-anchor="middle" font-family="'DejaVu Sans', sans-serif">📌 Save &amp; Share</text>
     </g>
   </svg>`;
 
@@ -95,7 +95,11 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
 export function renderPostPng(presetId, themeKey = 'navy') {
   const svg = renderPostSvg(presetId, themeKey);
   const resvg = new Resvg(svg, {
-    fitTo: { mode: 'width', value: 1080 }
+    fitTo: { mode: 'width', value: 1080 },
+    font: {
+      loadSystemFonts: true,
+      defaultFontFamily: 'DejaVu Sans'
+    }
   });
   const pngData = resvg.render();
   return pngData.asPng();
