@@ -1,17 +1,31 @@
 services:
   - type: web
     name: piggymath-social-studio
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    # The repo ships a Dockerfile (Alpine + fontconfig + DejaVu) that the card
+    # renderer depends on for typography. Build from it rather than the native
+    # Node environment so local, CI and production render identically.
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/health
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: IG_USER_ID
-        value: 17841438053748611
+      # Secrets are entered in the Render dashboard and never stored in git.
       - key: IG_ACCESS_TOKEN
         sync: false
       - key: PINTEREST_ACCESS_TOKEN
         sync: false
       - key: PINTEREST_BOARD_ID
-        value: PiggyMath Financial Tips
+        sync: false
+      # Public identifiers and settings.
+      - key: IG_USER_ID
+        value: "17841438053748611"
+      - key: FACEBOOK_PAGE_ID
+        value: "1160207883850934"
+      - key: PINTEREST_BOARD_NAME
+        value: PiggyMath Tax & Money Tips
+      - key: POST_CRON
+        value: 0 9 * * *
+      - key: POST_TIMEZONE
+        value: America/New_York
+      - key: DRY_RUN
+        value: "false"

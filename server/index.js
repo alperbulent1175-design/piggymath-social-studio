@@ -1,106 +1,122 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { initScheduler } from './scheduler.js';
-import { DAILY_TAX_CONTENT } from './contentLibrary.js';
-import { publishToInstagram } from './api/instagram.js';
-import { publishToPinterest } from './api/pinterest.js';
+
+import { config, credentialStatus, logStartupConfig } from './config.js';
+import { CONTENT_PRESETS } from '../shared/contentLibrary.js';
+import { initScheduler, getSchedulerState } from './scheduler.js';
+import { publishPreset, findPreset, ensureAssetsDir, presetForDate } from './publisher.js';
 import { renderPostSvg, renderPostPng } from './canvasRenderer.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DIST_DIR = path.join(__dirname, '../dist');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-
 app.use(cors());
 app.use(express.json());
 
-// Verified 60-Day Extended Meta Access Token & Active Pinterest Sandbox Token
-const VERIFIED_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNJaENETTVES3A2U21URU1Bc3lRRFlYVWVrSXZNT3NPbFJLcExid2ZuZGtJZkZZWkJ4bGQ2aElDME5YblNRNzA3dzlWbU5yZkJzNmEzUTlxVjY3NzhJdk5aQXFjWUp1dXJUa2p1TG5qY1pBYWIwQ3d2eW9aQjZ4Q3pTaWlNUVFpOFpDMjlpWkFBaEFLSEQ1U3ZObjBnc24wVkdVd1hPSmxmZkRoUzVhd2F3cXh1ek50NmFuMWhpYlpCTW5ka05HbDdaQXN5c05j', 'base64').toString('utf-8');
+ensureAssetsDir();
 
-const VERIFIED_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FAG0NBQjZENk9DRUhONUhZQkFDR1NPM01LV1ZONzNMR1NXWExMRzVFNElHWk5MQ1dWMlVWM0VWREFFRUNHQTRGWklTN1BVQks0SkhCNlVWSUE=', 'base64').toString('utf-8');
+// --- API -------------------------------------------------------------------
 
-let livePinterestToken = process.env.PINTEREST_ACCESS_TOKEN || VERIFIED_PIN_TOKEN;
-
-// Ensure static assets directory exists
-const assetsDir = path.join(__dirname, '../dist/assets');
-if (!fs.existsSync(assetsDir)) {
-  fs.mkdirSync(assetsDir, { recursive: true });
-}
-
-// API Routes FIRST
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', app: 'PiggyMath Auto-Post Engine 24/7' });
+  const status = credentialStatus();
+  res.json({
+    status: 'ok',
+    app: 'PiggyMath Auto-Post Engine',
+    presets: CONTENT_PRESETS.length,
+    // Real state, not a hardcoded "Connected". The dashboard reads this.
+    instagram: status.instagram,
+    pinterest: status.pinterest,
+    dryRun: status.dryRun,
+    publicBaseUrl: status.publicBaseUrl,
+    publicBaseUrlReachable: status.publicBaseUrlReachable,
+    scheduler: getSchedulerState()
+  });
 });
 
 app.get('/api/presets', (req, res) => {
-  res.json({ presets: DAILY_TAX_CONTENT });
+  res.json({ presets: CONTENT_PRESETS, today: presetForDate().id });
+});
+
+// Render a card on demand without publishing. Useful for previewing exactly
+// what the auto-poster would send.
+app.get('/api/preview/:presetId.:ext(png|svg)', (req, res) => {
+  const preset = findPreset(req.params.presetId);
+  if (!preset) return res.status(404).json({ error: `Unknown preset "${req.params.presetId}"` });
+  try {
+    if (req.params.ext === 'svg') {
+      res.type('image/svg+xml').send(renderPostSvg(preset, req.query.theme));
+    } else {
+      const png = renderPostPng(preset, req.query.theme);
+      res.type('image/png').set('Content-Length', String(png.length)).send(png);
+    }
+  } catch (err) {
+    res.status(500).json({ error: `Render failed: ${err.message}` });
+  }
 });
 
 app.post('/api/publish-now', async (req, res) => {
-  const { presetId } = req.body;
-  const preset = DAILY_TAX_CONTENT.find(p => p.id === presetId) || DAILY_TAX_CONTENT[0];
+  const { presetId } = req.body || {};
 
-  const igUserId = process.env.IG_USER_ID || '17841438053748611';
-  const igToken = VERIFIED_IG_TOKEN;
-
-  // Generate and save static PNG file to disk for Meta Graph API compliance
-  const imageFileName = `card-${preset.id}.png`;
-  const imageFilePath = path.join(assetsDir, imageFileName);
-
-  try {
-    const pngBuffer = renderPostPng(preset.id);
-    fs.writeFileSync(imageFilePath, pngBuffer);
-    console.log(`[API Publish-Now] Saved static PNG infographic to ${imageFilePath}`);
-  } catch (err) {
-    console.error('Error generating static PNG card:', err);
+  // Previously an unknown id silently fell back to DAILY_TAX_CONTENT[0], so
+  // every card in the UI published the day-1 self-employment-tax post.
+  const preset = presetId ? findPreset(presetId) : presetForDate();
+  if (!preset) {
+    return res.status(400).json({
+      success: false,
+      error: `Unknown preset "${presetId}"`,
+      validPresetIds: CONTENT_PRESETS.map(p => p.id)
+    });
   }
 
-  // Static Visual Infographic Image URL
-  const host = req.get('host') || 'piggymath-social-studio.onrender.com';
-  const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const visualImageUrl = `${protocol}://${host}/assets/${imageFileName}`;
+  const status = credentialStatus();
+  if (!status.anyReady && !config.dryRun) {
+    return res.status(503).json({
+      success: false,
+      error: 'No social platform is configured on this server.',
+      missing: { instagram: status.instagram.missing, pinterest: status.pinterest.missing },
+      hint: 'Set these in the Render dashboard under Environment.'
+    });
+  }
 
-  console.log(`[API Publish-Now] Publishing to IG & Pinterest with image: ${visualImageUrl}`);
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const proto = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto || req.protocol || 'https').split(',')[0].trim();
+  const host = req.get('host');
+  const baseUrl = host ? `${proto}://${host}` : config.publicBaseUrl;
 
-  const igRes = await publishToInstagram({
-    igUserId: igUserId,
-    accessToken: igToken,
-    imageUrl: visualImageUrl,
-    caption: preset.igCaption
-  });
+  const result = await publishPreset(preset, { baseUrl, source: 'manual' });
+  const published = result.instagram.success || result.pinterest.success;
 
-  const pinRes = await publishToPinterest({
-    accessToken: livePinterestToken,
-    boardId: process.env.PINTEREST_BOARD_ID || 'PiggyMath Financial Tips',
-    imageUrl: visualImageUrl,
-    title: preset.pinTitle,
-    description: preset.pinDescription
-  });
-
-  console.log('[API Publish-Now Results]', { igRes, pinRes });
-
-  res.json({
-    success: true,
-    message: 'Visual Infographic Post published / dispatched to Instagram & Pinterest!',
-    imageUrl: visualImageUrl,
-    instagram: igRes,
-    pinterest: pinRes
+  // The old handler returned success:true unconditionally, so the UI showed a
+  // green banner even when both platforms failed.
+  res.status(published || result.dryRun ? 200 : 502).json({
+    success: published,
+    dryRun: result.dryRun,
+    presetId: preset.id,
+    message: result.dryRun
+      ? 'Dry run: card rendered, nothing posted.'
+      : published
+        ? 'Published.'
+        : 'Publishing failed on every platform. See per-platform reason below.',
+    imageUrl: result.imageUrl,
+    instagram: result.instagram,
+    pinterest: result.pinterest
   });
 });
 
-// Serve static frontend files and generated post PNG cards from 'dist' directory
-app.use(express.static(path.join(__dirname, '../dist')));
+// --- Static frontend -------------------------------------------------------
 
-// Fallback to index.html for Single Page Application
+app.use(express.static(DIST_DIR));
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Unknown API route' });
+  res.sendFile(path.join(DIST_DIR, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`[PiggyMath 24/7 Cloud Server] Running on port ${PORT}`);
+app.listen(config.port, () => {
+  console.log(`[PiggyMath] Server listening on port ${config.port}`);
+  logStartupConfig();
   initScheduler();
 });

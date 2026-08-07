@@ -1,197 +1,148 @@
-# 🐷 PiggyMath Social Content Studio — Full Developer & AI Handover Document
+# PiggyMath Social Content Studio — Developer Handover
 
-> **Handover Target**: Claude / Future AI Agents & Engineering Team  
-> **Repository**: `https://github.com/alperbulent1175-design/piggymath-social-studio.git`  
-> **Live Web Application**: `https://piggymath-social-studio.onrender.com/`  
-> **Associated Website**: `https://piggymath.com/`  
-> **Status**: **100% PRODUCTION READY & FULLY OPERATIONAL 24/7**
+**Repository**: `https://github.com/alperbulent1175-design/piggymath-social-studio`
+**Live app**: `https://piggymath-social-studio.onrender.com/`
+**Website**: `https://piggymath.com/`
 
 ---
 
-## 📌 Executive Summary
+## What this is
 
-**PiggyMath Social Content Studio** is an automated 24/7 social media content generator, visual infographic renderer, and auto-publishing platform built specifically for **PiggyMath** (`https://piggymath.com/`).
+An automated social content generator for [PiggyMath](https://piggymath.com/). It renders 1080×1080 infographic cards server-side from a shared content library and publishes them to Instagram (`@piggymath`) and Pinterest (`PiggyMath`), both on a daily schedule and on demand from the dashboard.
 
-It generates and automatically publishes daily high-converting financial tips, 1099 self-employment tax breakdowns, quarterly tax deadline reminders, and freelance money calculators directly to **Instagram (`@piggymath`)** and **Pinterest (`PiggyMath`)**.
+## Current status, honestly stated
 
----
+A previous version of this document described the system as "100% production ready and fully operational 24/7." That was not accurate, and the discrepancy is worth recording so it isn't repeated.
 
-## 🚀 Key Features & Capabilities
+The daily scheduler read credentials from environment variables that were never set, and the Instagram module returned `{ success: true, simulated: true }` when credentials were missing — so the cron logged healthy results while publishing nothing. The scheduler also attached a static `og.png` rather than the rendered card. The dashboard's "Publish Now" button sent frontend preset ids that the backend could not resolve, so every click published the day-1 self-employment-tax post regardless of which card was selected. The card body itself was hardcoded SE-tax text, so a compound-interest post rendered self-employment-tax bullets. And access tokens were committed to this public repository, one in plain text and one base64-encoded specifically to bypass GitHub Push Protection.
 
-1. **24/7 Cloud Auto-Poster (`node-cron`)**:
-   - Fires automatically every day at **09:00 AM**.
-   - Cycles through a 365-day content library of unique tax hooks, bullet points, and captions.
-
-2. **Server-Side Visual Infographic Card Renderer (`@resvg/resvg-js`)**:
-   - Converts content presets dynamically into high-resolution **1080x1080 PNG infographic cards**.
-   - Built with Alpine Linux `fontconfig` and `ttf-dejavu` vector font integration for crystal-clear typography on Linux servers.
-
-3. **Meta Graph API v19.0 Integration (Instagram Business)**:
-   - Automated 2-step media container creation (`POST /{ig-user-id}/media`) and container publishing (`POST /{ig-user-id}/media_publish`).
-   - Built-in 4-second media processing delay to satisfy Meta's async media crawler requirements.
-
-4. **Pinterest API v5 Integration**:
-   - Automatically detects or creates the target board (`"PiggyMath Tax & Money Tips"`).
-   - Publishes pins with title, description, link (`https://piggymath.com/`), and static infographic card images.
-
-5. **Frontend Studio Dashboard (Vite + React)**:
-   - **Tab 1: Post Studio**: Visual card editor with live canvas preview, color theme switcher (Navy, Pink, Light, Mint), text controls, and quick publish.
-   - **Tab 2: IG 3x3 Grid Simulator**: Simulates how posts look on the Instagram profile grid with alternating color rhythm.
-   - **Tab 3: Auto-Post Queue**: 365-Day content queue dashboard with one-click **"Publish Now"** trigger connected to `/api/publish-now`.
-   - **Tab 4: API Settings**: Live Meta & Pinterest token credentials and platform health monitor.
+Those issues are fixed. What follows describes the system as it now behaves.
 
 ---
 
-## 🛠️ Technology Stack & Architecture
+## Credentials: environment variables only
+
+**Never commit a token to this repository, in any form.** Base64 is encoding, not encryption: if the server can decode it, so can anyone who clones the repo. Encoding a secret to slip past GitHub Push Protection is worse than being blocked by it, because Push Protection is also what triggers the provider to auto-revoke a leaked token. A secret that reaches a public commit must be treated as compromised even after the file is deleted — it stays readable in history.
+
+All credentials are read in `server/config.js` from the environment. In production they are set in the Render dashboard under Environment; locally, copy `.env.example` to `.env` (git-ignored).
+
+| Variable | Secret | Notes |
+| :-- | :-- | :-- |
+| `IG_ACCESS_TOKEN` | yes | See token longevity below |
+| `IG_USER_ID` | no | `17841438053748611` |
+| `FACEBOOK_PAGE_ID` | no | `1160207883850934` |
+| `PINTEREST_ACCESS_TOKEN` | yes | |
+| `PINTEREST_BOARD_ID` | no | Numeric board id. If unset, the board is matched by `PINTEREST_BOARD_NAME`, then created |
+| `PINTEREST_BOARD_NAME` | no | `PiggyMath Tax & Money Tips` |
+| `PINTEREST_SANDBOX` | no | `true` routes to the sandbox API, where pins never appear publicly. Leave unset |
+| `PUBLIC_BASE_URL` | no | Origin the platforms fetch card images from. Falls back to `RENDER_EXTERNAL_URL` |
+| `POST_CRON` / `POST_TIMEZONE` | no | `0 9 * * *`, `America/New_York` |
+| `DRY_RUN` | no | `true` renders and logs but never calls the social APIs |
+
+### Token longevity
+
+The 60-day Meta extended token needs manual replacement six times a year and there is no refresh logic in this codebase. Prefer a **Business Manager System User token**, which does not expire: Business Settings → System Users → add a system user, give it Admin on the Instagram Business Account and the Facebook Page, then generate a token with `instagram_basic`, `instagram_content_publish`, `pages_manage_posts`, `pages_read_engagement`.
+
+Pinterest v5 access tokens last 30 days; the refresh token lasts 60 and is refreshable indefinitely, so refreshing before expiry keeps access alive without re-authorising. Automating that refresh is still outstanding — see Known gaps.
+
+---
+
+## Architecture
 
 ```
-                                  +----------------------------+
-                                  |     Vite + React SPA       |
-                                  |   (Frontend Dashboard)     |
-                                  +--------------+-------------+
-                                                 |
-                                         HTTP / REST API
-                                                 |
-                                  +--------------v-------------+
-                                  |    Express.js Node Server  |
-                                  |    (server/index.js)       |
-                                  +-------+------------+-------+
-                                          |            |
-             +----------------------------+            +----------------------------+
-             |                                                                      |
-+------------v------------+                                            +------------v------------+
-|   Server-Side Renderer  |                                            |    Automated Scheduler  |
-| (canvasRenderer.js +    |                                            |    (scheduler.js +      |
-|  @resvg/resvg-js)       |                                            |     node-cron)          |
-+------------+------------+                                            +------------+------------+
-             |                                                                      |
-      Generates PNG Card                                                     Triggers Daily 09:00
-             |                                                                      |
-             +----------------------------+-----------------------------------------+
-                                          |
-                                 Dispatches Content
-                                          |
-                 +------------------------+------------------------+
-                 |                                                 |
-  +--------------v-------------+                    +--------------v-------------+
-  |    Meta Graph API v19.0    |                    |     Pinterest API v5       |
-  |  (Instagram @piggymath)    |                    |    (PiggyMath Business)    |
-  +----------------------------+                    +----------------------------+
+        Vite + React dashboard (src/)
+                   |
+              REST over HTTP
+                   |
+        Express server (server/index.js)
+                   |
+        publisher.js  <-- the ONE publish path
+           |          \
+   canvasRenderer.js   \
+   (resvg SVG -> PNG)   +-- api/instagram.js  (Meta Graph v19.0)
+                        +-- api/pinterest.js  (Pinterest v5)
+                   ^
+                   |
+           scheduler.js (node-cron)
 ```
 
-* **Frontend**: React 18, Vite 5, Vanilla CSS Design Tokens (`#FF5271` Piggy Pink, `#0F172A` Deep Navy, `#F8FAFC` Studio White, `#10B981` Mint).
-* **Backend**: Node.js, Express.js, `cors`, `node-cron`.
-* **Renderer**: `@resvg/resvg-js` (WebAssembly SVG-to-PNG engine).
-* **Containerization & Hosting**: Docker (`Dockerfile`), Render.com Cloud Web Service (`render.yaml`).
+`publisher.js` exists because the manual route and the cron were previously two separate implementations that drifted apart. Both now call `publishPreset()`. If you add a publishing target, add it there — not in the route handler.
 
----
+`shared/contentLibrary.js` is the single source of truth for post content, imported by both the React app and the Node server. There used to be two libraries with different preset ids, which is what made the dashboard publish the wrong post. Do not fork it.
 
-## 📁 Repository Directory Structure
+### Layout
 
 ```
 piggymath-social-studio/
-├── Dockerfile                   # Alpine Linux Docker build with fontconfig & ttf-dejavu fonts
-├── render.yaml                  # Render.com cloud deployment blueprint
-├── package.json                 # Project dependencies & scripts
-├── vite.config.js               # Vite frontend build configuration
+├── Dockerfile                  Alpine + fontconfig + DejaVu fonts (Render builds from this)
+├── render.yaml                 Render blueprint; secrets are sync:false
+├── .env.example                Documented template, no real values
+├── shared/
+│   └── contentLibrary.js       SINGLE SOURCE OF TRUTH for all post content
+├── scripts/
+│   └── calibrateFontMetrics.cjs  Regenerates server/fontMetrics.js
 ├── server/
-│   ├── index.js                 # Express server, API routes, static file serving, fallback tokens
-│   ├── canvasRenderer.js        # Dynamic SVG-to-PNG visual infographic card generator
-│   ├── scheduler.js             # node-cron 09:00 AM daily post scheduler
-│   ├── contentLibrary.js        # 365-day server-side tax content presets
-│   └── api/
-│       ├── instagram.js         # Meta Graph API container creation & publishing module
-│       └── pinterest.js         # Pinterest API v5 pin creation & auto-board creation module
-└── src/
-    ├── App.jsx                  # Main React SPA component & state routing
-    ├── App.css                  # Studio visual design system & glassmorphism dark theme styles
-    ├── components/
-    │   ├── Header.jsx           # Studio top navigation bar
-    │   ├── CanvasPreview.jsx    # Visual post canvas preview card
-    │   ├── GridPreviewer.jsx    # Instagram 3x3 profile grid simulator
-    │   ├── CalendarQueue.jsx    # Auto-post queue & Publish-Now trigger
-    │   ├── EditorControls.jsx   # Text & theme customization panel
-    │   └── ApiSettings.jsx      # API connection status & token management
-    └── data/
-        ├── brandIdentity.js     # Brand colors, ratios, SVG icons
-        └── taxHooksAndTips.js   # 10 detailed financial/tax presets & viral hooks
+│   ├── index.js                Express app, API routes, static serving
+│   ├── config.js               Env parsing + credential status reporting
+│   ├── publisher.js            Shared render-and-publish pipeline
+│   ├── scheduler.js            node-cron daily job
+│   ├── canvasRenderer.js       Preset -> SVG -> PNG card
+│   ├── fontMetrics.js          Measured DejaVu advance widths (generated)
+│   └── api/{instagram,pinterest}.js
+└── src/                        React dashboard
 ```
 
 ---
 
-## 🔑 Connected Accounts & API Credentials
+## API
 
-### 1. Instagram Business Account (`@piggymath`)
-* **Username**: `@piggymath`
-* **Instagram Business ID**: `17841438053748611`
-* **Facebook Page**: `Money Tools for Freelancers` (ID: `1160207883850934`)
-* **Meta App ID**: `979304868451455` (`PiggyMath Auto Poster`)
-* **Active Extended Token**: 60-Day Extended Access Token (Base64 decoded in `server/index.js`).
-* **Required Scopes**: `instagram_basic`, `instagram_content_publish`, `pages_show_list`, `pages_read_engagement`.
+| Method | Endpoint | Notes |
+| :-- | :-- | :-- |
+| `GET` | `/api/health` | Real credential status per platform, scheduler state, last run. Not a hardcoded "connected" |
+| `GET` | `/api/presets` | Full library plus today's rotation id |
+| `GET` | `/api/preview/:presetId.png` | Renders a card without publishing. Add `?theme=navy\|pink\|light\|mint` |
+| `POST` | `/api/publish-now` | Body `{ presetId }`. Publishes that exact preset |
+| `GET` | `/assets/card-:presetId.png` | Static card written at publish time, fetched by the platform crawlers |
 
-### 2. Pinterest Business Account (`PiggyMath`)
-* **Business Name**: `PiggyMath`
-* **Pinterest User ID**: `1089730578494297937`
-* **Target Board**: `PiggyMath Tax & Money Tips` (ID: `1089730509776792114`)
-* **Active Token**: Sandbox / Extended Token with `boards:read`, `boards:write`, `pins:read`, `pins:write` scopes.
+`/api/publish-now` returns `400` for an unknown preset id (it no longer falls back to preset zero), `503` when no platform is configured, `502` when every platform failed, and `200` on success. The response carries per-platform `{ success, reason }` — the endpoint never reports success on behalf of a platform it did not reach.
 
 ---
 
-## 💻 Local Development & Command Reference
+## Behaviour worth knowing
 
-### 1. Installation
+**Scheduling.** `node-cron` runs in `POST_TIMEZONE`. Without an explicit timezone it uses the process timezone, which is UTC on Render — that is how a job labelled "09:00 EST" came to fire at 05:00 Eastern.
+
+**Rotation.** The daily preset is derived from the day of year (`dayOfYear % library.length`), so it is stateless. The old in-memory counter reset to zero on every restart and deploy, restarting the cycle at post #1.
+
+**Instagram publishing** is a two-step container flow. `api/instagram.js` polls the container's `status_code` until `FINISHED` rather than sleeping a fixed four seconds, then publishes. Meta must be able to fetch the image over the public internet, so `PUBLIC_BASE_URL` cannot be localhost.
+
+**Pinterest publishing** targets the production API. The board is resolved by configured id, then by name, then created — it no longer grabs whichever board the API happens to list first.
+
+**Card rendering** is entirely preset-driven. `bullets` and `highlightBox` from the content library become the card body. Text wraps using measured DejaVu advance widths in `server/fontMetrics.js`; the body font shrinks to fit rather than overflowing the canvas. Emoji are stripped at render time because DejaVu has no colour emoji glyphs and resvg would draw empty boxes — accented characters and punctuation now survive.
+
+---
+
+## Local development
+
 ```bash
-git clone https://github.com/alperbulent1175-design/piggymath-social-studio.git
-cd piggymath-social-studio
 npm install
+cp .env.example .env          # fill in tokens; .env is git-ignored
+
+npm run dev                   # Vite dashboard on :5173
+npm run server                # Express API on :4000
+npm run build                 # production bundle into dist/
 ```
 
-### 2. Run Local Development Server (Frontend + Backend)
+To exercise the full pipeline without posting, set `DRY_RUN=true`. To eyeball a card, hit `/api/preview/<presetId>.png`.
+
+Regenerate font metrics after changing the font stack:
+
 ```bash
-# Start Vite React frontend dev server (http://localhost:5173)
-npm run dev
-
-# Start Express Node backend server (http://localhost:4000)
-npm run server
-```
-
-### 3. Build & Deploy
-```bash
-# Build production bundle to dist/
-npm run build
-
-# Commit and push to main (Render deploys automatically on push)
-git add .
-git commit -m "Your commit message"
-git push -u origin main
+node scripts/calibrateFontMetrics.cjs
 ```
 
 ---
 
-## 🔄 API Endpoint Reference
+## Known gaps
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Server health check endpoint |
-| `GET` | `/api/presets` | Returns the 365-day content library presets |
-| `GET` | `/assets/card-:presetId.png` | Serves static high-res PNG infographic card image |
-| `POST` | `/api/publish-now` | Triggers immediate live publish to Instagram `@piggymath` & Pinterest |
-
----
-
-## 💡 Information for Future AI Agents (Claude / GPT)
-
-1. **Token Security & Base64 Fallbacks**:
-   - Raw Meta token strings starting with `EAAN...` or Pinterest tokens starting with `pina_...` trigger **GitHub Push Protection** if committed in plain text.
-   - In `server/index.js`, fallback tokens are stored as **Base64 strings** (`Buffer.from('...', 'base64').toString('utf-8')`). This allows git pushes to succeed seamlessly while providing instant fallback credentials for Render.
-
-2. **Meta Image Requirements**:
-   - Meta Graph API requires public image URLs returning a valid `Content-Type: image/png` or `image/jpeg` with proper `Content-Length`.
-   - In `server/index.js`, when `/api/publish-now` is called, `renderPostPng` renders the card and writes `card-${preset.id}.png` into `dist/assets/`, which Express serves statically at `https://piggymath-social-studio.onrender.com/assets/card-${preset.id}.png`.
-
-3. **Instagram Media Container Pipeline**:
-   - `server/api/instagram.js` implements a **4-second async pause** between container creation (`POST /{ig-user-id}/media`) and container publishing (`POST /{ig-user-id}/media_publish`) to allow Meta's crawler pipeline to finish processing before publishing.
-
----
-
-*Handover document generated on August 8, 2026 for PiggyMath Social Content Studio.* 🐷✨
+Pinterest refresh-token rotation is not implemented; the access token still needs manual replacement every 30 days until it is. The dashboard's API Settings tab is a mockup — its inputs save nothing and its "Connected" badges are hardcoded, so read `/api/health` for real status rather than trusting that screen. The "Pause Auto-Posting" toggle is local UI state and does not stop the cron. The content library holds ten presets, so posts repeat every ten days; expanding it is the main content task. If the Render service is on a plan that spins down when idle, an in-process cron cannot fire while the container is asleep — Render's own Cron Job service would be more reliable than `node-cron` here.

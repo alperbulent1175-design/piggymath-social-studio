@@ -27,14 +27,23 @@ export default function CalendarQueue() {
     }
   };
 
-  const scheduleDays = [
-    { date: 'Today (09:00 AM)', preset: CONTENT_PRESETS[0], platform: 'Both (IG + Pinterest)' },
-    { date: 'Tomorrow (09:00 AM)', preset: CONTENT_PRESETS[1], platform: 'Both (IG + Pinterest)' },
-    { date: 'Aug 9 (09:00 AM)', preset: CONTENT_PRESETS[2], platform: 'Both (IG + Pinterest)' },
-    { date: 'Aug 10 (09:00 AM)', preset: CONTENT_PRESETS[3], platform: 'Both (IG + Pinterest)' },
-    { date: 'Aug 11 (09:00 AM)', preset: CONTENT_PRESETS[4], platform: 'Both (IG + Pinterest)' },
-    { date: 'Aug 12 (09:00 AM)', preset: CONTENT_PRESETS[5], platform: 'Both (IG + Pinterest)' }
-  ];
+  // Mirrors presetForDate() in server/publisher.js. These rows used to be a
+  // hardcoded list of CONTENT_PRESETS[0..5] with fixed August dates, so the
+  // queue showed posts the backend was never going to send.
+  const dayOfYear = (d) =>
+    Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86400000);
+
+  const scheduleDays = Array.from({ length: 7 }, (_, offset) => {
+    const day = new Date();
+    day.setDate(day.getDate() + offset);
+    const label =
+      offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : day.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return {
+      key: day.toISOString().slice(0, 10),
+      date: `${label} (09:00 AM ET)`,
+      preset: CONTENT_PRESETS[dayOfYear(day) % CONTENT_PRESETS.length]
+    };
+  });
 
   return (
     <div className="calendar-queue-container">
@@ -45,9 +54,9 @@ export default function CalendarQueue() {
             <span className="dot"></span>
             <strong>{isAutoActive ? 'Automated Daily Poster Active' : 'Daily Poster Paused'}</strong>
           </div>
-          <h2>365-Day Daily Auto-Publishing Queue</h2>
+          <h2>Daily Auto-Publishing Queue</h2>
           <p>
-            The backend engine publishes 1 educational tax post to Instagram & Pinterest every morning at 09:00 AM EST, automatically alternating brand color schemes to maintain your 3x3 grid aesthetic.
+            The backend publishes one post to Instagram &amp; Pinterest each morning at 09:00 America/New_York, rotating through the {CONTENT_PRESETS.length} presets in the shared content library by day of year.
           </p>
         </div>
 
