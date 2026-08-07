@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Verified 60-Day Extended Meta & Pinterest Access Tokens
 const VERIFIED_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNJaENETTVES3A2U21URU1Bc3lRRFlYVWVrSXZNT3NPbFJLcExid2ZuZGtJZkZZWkJ4bGQ2aElDME5YblNRNzA3dzlWbU5yZkJzNmEzUTlxVjY3NzhJdk5aQXFjWUp1dXJUa2p1TG5qY1pBYWIwQ3d2eW9aQjZ4Q3pTaWlNUVFpOFpDMjlpWkFBaEFLSEQ1U3ZObjBnc24wVkdVd1hPSmxmZkRoUzVhd2F3cXh1ek50NmFuMWhpYlpCTW5ka05HbDdaQXN5c05j', 'base64').toString('utf-8');
-const VERIFIED_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FBR0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
+const VERIFIED_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FAG0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
 
 // API Routes FIRST
 app.get('/api/health', (req, res) => {
@@ -36,8 +36,9 @@ app.get('/api/post-image/:presetId.png', (req, res) => {
     const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
     const pngBuffer = renderPostPng(cleanId);
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(pngBuffer);
+    res.end(pngBuffer);
   } catch (err) {
     console.error('PNG render error:', err);
     res.status(500).send('Image render error');
@@ -49,8 +50,9 @@ app.get('/api/post-image/:presetId', (req, res) => {
     const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
     const pngBuffer = renderPostPng(cleanId);
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(pngBuffer);
+    res.end(pngBuffer);
   } catch (err) {
     console.error('PNG render error:', err);
     res.status(500).send('Image render error');
