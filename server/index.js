@@ -6,7 +6,7 @@ import { initScheduler } from './scheduler.js';
 import { DAILY_TAX_CONTENT } from './contentLibrary.js';
 import { publishToInstagram } from './api/instagram.js';
 import { publishToPinterest } from './api/pinterest.js';
-import { renderPostSvg } from './canvasRenderer.js';
+import { renderPostSvg, renderPostPng } from './canvasRenderer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,9 +17,9 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Fallback Decoded Tokens
-const DEFAULT_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNOS09aQUNxRFpCaDFpdTJGRHp2UElaQ2RJYlM2MDQ3czIzdFkxWTNjSW1vSEtxcnZIR3FodG85SkFHcFB0bVU0OEFVbkt6WkJaQ2NVSDFPYlZITHh1c294U1laQ1dHYm53MUlXTmZKSmlvRnB0dVl5dmpXSWR5QkdmdFJ0S2t6Rk1jVHZIaFlKTUQ5enpaQkxTM0xJWUFmWkJIR2pHdmhkbzcxRTliVzdzV3ZaQVF3OUhkeE9ucVM2eG4xWkJ0OWRvaVROVlZLZWpaQXV2R2o3SVNIRVNuaVQxUFVGRENOYVh0WTVTYVBhWkJSaTE2TmFSMTFsc1c5SnZ4UGltZXE3ejBMcXdUWXBOa2lzMzZPN1NWNHlzYTVUWUpJc3ZaQkF0a29aRA==', 'base64').toString('utf-8');
-const DEFAULT_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FAG0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
+// Extended 60-Day / Never Expiring Fallback Meta & Pinterest Tokens
+const DEFAULT_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNJaENETTVES3A2U21URU1Bc3lRRFlYVWVrSXZNT3NPbFJLcExid2ZuZGtJZkZZWkJ4bGQ2aElDME5YblNRNzA3dzlWbU5yZkJzNmEzUTlxVjY3NzhJdk5aQXFjWUp1dXJUa2p1TG5qY1pBYWIwQ3d2eW9aQjZ4Q3pTaWlNUVFpOFpDMjlpWkFBaEFLSERTVnZOMjBnc24wVkdVd1hPSmZmRGhTNWF3YXdxeHV6TnQ2YW4xaGliWkJNbmRrTkdsN1pBc3lzTmM=', 'base64').toString('utf-8');
+const DEFAULT_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FBR0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
 
 // API Routes FIRST
 app.get('/api/health', (req, res) => {
@@ -30,13 +30,31 @@ app.get('/api/presets', (req, res) => {
   res.json({ presets: DAILY_TAX_CONTENT });
 });
 
-// Dynamic Visual Post Infographic Image Route
+// Dynamic Visual PNG Post Infographic Image Route for Meta & Pinterest
+app.get('/api/post-image/:presetId.png', (req, res) => {
+  try {
+    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
+    const pngBuffer = renderPostPng(cleanId);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(pngBuffer);
+  } catch (err) {
+    console.error('PNG render error:', err);
+    res.status(500).send('Image render error');
+  }
+});
+
 app.get('/api/post-image/:presetId', (req, res) => {
-  const cleanId = req.params.presetId.replace(/\.svg|\.png/, '');
-  const svgContent = renderPostSvg(cleanId);
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.send(svgContent);
+  try {
+    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
+    const pngBuffer = renderPostPng(cleanId);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(pngBuffer);
+  } catch (err) {
+    console.error('PNG render error:', err);
+    res.status(500).send('Image render error');
+  }
 });
 
 app.post('/api/publish-now', async (req, res) => {
@@ -47,12 +65,12 @@ app.post('/api/publish-now', async (req, res) => {
   const igToken = process.env.IG_ACCESS_TOKEN || DEFAULT_IG_TOKEN;
   const pinToken = process.env.PINTEREST_ACCESS_TOKEN || DEFAULT_PIN_TOKEN;
 
-  // Dynamic visual infographic image URL for Instagram & Pinterest
+  // High-Resolution PNG Visual Infographic Image URL
   const host = req.get('host') || 'piggymath-social-studio.onrender.com';
   const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const visualImageUrl = `${protocol}://${host}/api/post-image/${preset.id}`;
+  const visualImageUrl = `${protocol}://${host}/api/post-image/${preset.id}.png`;
 
-  console.log(`[API Publish-Now] Publishing VISUAL INFOGRAPHIC image: ${visualImageUrl}`);
+  console.log(`[API Publish-Now] Publishing HIGH-RES PNG INFOGRAPHIC: ${visualImageUrl}`);
 
   const igRes = await publishToInstagram({
     igUserId: igUserId,
@@ -68,6 +86,8 @@ app.post('/api/publish-now', async (req, res) => {
     title: preset.pinTitle,
     description: preset.pinDescription
   });
+
+  console.log('[API Publish-Now Results]', { igRes, pinRes });
 
   res.json({
     success: true,
