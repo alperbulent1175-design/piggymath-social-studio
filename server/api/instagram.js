@@ -7,6 +7,8 @@ export async function publishToInstagram({ igUserId, accessToken, imageUrl, capt
   }
 
   try {
+    console.log(`[Instagram API] Step 1: Creating media container for URL: ${imageUrl}...`);
+    
     // Step 1: Create Container
     const containerUrl = `https://graph.facebook.com/v19.0/${igUserId}/media`;
     const containerRes = await fetch(containerUrl, {
@@ -24,7 +26,13 @@ export async function publishToInstagram({ igUserId, accessToken, imageUrl, capt
       throw new Error(`IG Container creation failed: ${JSON.stringify(containerData)}`);
     }
 
+    console.log(`[Instagram API] Container created ID: ${containerData.id}. Waiting 4 seconds for Meta image pipeline processing...`);
+    
+    // Wait 4 seconds for Meta's async image download & processing pipeline
+    await new Promise(resolve => setTimeout(resolve, 4000));
+
     // Step 2: Publish Container
+    console.log(`[Instagram API] Step 2: Publishing container ID: ${containerData.id}...`);
     const publishUrl = `https://graph.facebook.com/v19.0/${igUserId}/media_publish`;
     const publishRes = await fetch(publishUrl, {
       method: 'POST',
@@ -36,6 +44,11 @@ export async function publishToInstagram({ igUserId, accessToken, imageUrl, capt
     });
     const publishData = await publishRes.json();
 
+    if (!publishData.id) {
+      throw new Error(`IG Container publish failed: ${JSON.stringify(publishData)}`);
+    }
+
+    console.log(`[Instagram API] LIVE POST SUCCESS! Published Media ID: ${publishData.id}`);
     return { success: true, mediaId: publishData.id };
   } catch (err) {
     console.error('[Instagram API Error]', err);
