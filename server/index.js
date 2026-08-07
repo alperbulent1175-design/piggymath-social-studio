@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initScheduler } from './scheduler.js';
 import { DAILY_TAX_CONTENT } from './contentLibrary.js';
@@ -21,6 +22,12 @@ app.use(express.json());
 const VERIFIED_IG_TOKEN = Buffer.from('RUFBTjZyQzdQbEg4QlNJaENETTVES3A2U21URU1Bc3lRRFlYVWVrSXZNT3NPbFJLcExid2ZuZGtJZkZZWkJ4bGQ2aElDME5YblNRNzA3dzlWbU5yZkJzNmEzUTlxVjY3NzhJdk5aQXFjWUp1dXJUa2p1TG5qY1pBYWIwQ3d2eW9aQjZ4Q3pTaWlNUVFpOFpDMjlpWkFBaEFLSEQ1U3ZObjBnc24wVkdVd1hPSmxmZkRoUzVhd2F3cXh1ek50NmFuMWhpYlpCTW5ka05HbDdaQXN5c05j', 'base64').toString('utf-8');
 const VERIFIED_PIN_TOKEN = Buffer.from('cGluYV9BTUFYWVpBWUFCSVpPQ0FAG0NBQjZENU9MVFk1WkhZQlFCSVFDNVpFSFg0UEJYTTVRRkJOSkxQSjVHUTNRVzRaT0NTR0RaN1RGS1VRRFFPT1daNkhMVkRLUkZWSkk2UUE=', 'base64').toString('utf-8');
 
+// Ensure static assets directory exists
+const assetsDir = path.join(__dirname, '../dist/assets');
+if (!fs.existsSync(assetsDir)) {
+  fs.mkdirSync(assetsDir, { recursive: true });
+}
+
 // API Routes FIRST (Before Static Middleware)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'PiggyMath Auto-Post Engine 24/7' });
@@ -28,43 +35,6 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/presets', (req, res) => {
   res.json({ presets: DAILY_TAX_CONTENT });
-});
-
-// Dynamic Visual Infographic Image Route (Returns PNG with SVG fallback)
-app.get('/api/post-image/:presetId.png', (req, res) => {
-  try {
-    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
-    const pngBuffer = renderPostPng(cleanId);
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.end(pngBuffer);
-  } catch (err) {
-    console.error('PNG render error, falling back to SVG:', err);
-    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
-    const svgContent = renderPostSvg(cleanId);
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.send(svgContent);
-  }
-});
-
-app.get('/api/post-image/:presetId', (req, res) => {
-  try {
-    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
-    const pngBuffer = renderPostPng(cleanId);
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.end(pngBuffer);
-  } catch (err) {
-    console.error('PNG render error, falling back to SVG:', err);
-    const cleanId = req.params.presetId.replace(/\.png|\.svg/, '');
-    const svgContent = renderPostSvg(cleanId);
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.send(svgContent);
-  }
 });
 
 app.post('/api/publish-now', async (req, res) => {
@@ -75,12 +45,24 @@ app.post('/api/publish-now', async (req, res) => {
   const igToken = VERIFIED_IG_TOKEN;
   const pinToken = process.env.PINTEREST_ACCESS_TOKEN || VERIFIED_PIN_TOKEN;
 
-  // High-Resolution Visual Infographic Image URL
+  // Generate and save static PNG file to disk for Meta Graph API compliance
+  const imageFileName = `card-${preset.id}.png`;
+  const imageFilePath = path.join(assetsDir, imageFileName);
+
+  try {
+    const pngBuffer = renderPostPng(preset.id);
+    fs.writeFileSync(imageFilePath, pngBuffer);
+    console.log(`[API Publish-Now] Saved static PNG infographic to ${imageFilePath}`);
+  } catch (err) {
+    console.error('Error generating static PNG card:', err);
+  }
+
+  // Static Visual Infographic Image URL
   const host = req.get('host') || 'piggymath-social-studio.onrender.com';
   const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const visualImageUrl = `${protocol}://${host}/api/post-image/${preset.id}.png`;
+  const visualImageUrl = `${protocol}://${host}/assets/${imageFileName}`;
 
-  console.log(`[API Publish-Now] Publishing HIGH-RES INFOGRAPHIC to IG @piggymath: ${visualImageUrl}`);
+  console.log(`[API Publish-Now] Publishing STATIC PNG INFOGRAPHIC to IG @piggymath: ${visualImageUrl}`);
 
   const igRes = await publishToInstagram({
     igUserId: igUserId,
@@ -108,7 +90,7 @@ app.post('/api/publish-now', async (req, res) => {
   });
 });
 
-// Serve static frontend files from 'dist' directory
+// Serve static frontend files and generated post PNG cards from 'dist' directory
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Fallback to index.html for Single Page Application
