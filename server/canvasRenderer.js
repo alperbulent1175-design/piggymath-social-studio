@@ -4,7 +4,12 @@ import { Resvg } from '@resvg/resvg-js';
 import { DAILY_TAX_CONTENT } from './contentLibrary.js';
 
 export function renderPostSvg(presetId, themeKey = 'navy') {
-  const preset = DAILY_TAX_CONTENT.find(p => p.id === presetId) || DAILY_TAX_CONTENT[0];
+  let preset = DAILY_TAX_CONTENT.find(p => p.id === presetId);
+
+  // Fallback match by category or default
+  if (!preset) {
+    preset = DAILY_TAX_CONTENT[0];
+  }
 
   const themes = {
     navy: { bg: '#0F172A', cardBg: '#1E293B', textPrimary: '#FFFFFF', textSecondary: '#94A3B8', accent: '#FF5271', badgeBg: 'rgba(255,82,113,0.15)', badgeText: '#FF758F' },
@@ -14,6 +19,12 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
   };
 
   const theme = themes[preset.theme || themeKey] || themes.navy;
+
+  const badgeText = (preset.badge || 'FINANCIAL TIP').replace(/&/g, '&amp;');
+  const hookTitle = (preset.hookTitle || 'Smart Money Math Made Simple').replace(/&/g, '&amp;');
+  const mainHeading = (preset.mainHeading || 'PiggyMath Tax Tip').replace(/&/g, '&amp;');
+  const subtitle = (preset.subtitle || 'Free financial tools at piggymath.com').replace(/&/g, '&amp;');
+  const ctaText = (preset.ctaText || 'Calculate free at piggymath.com 🐷').replace(/&/g, '&amp;');
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" style="background-color: ${theme.bg}; font-family: 'sans-serif';">
     <rect width="1080" height="1080" fill="${theme.bg}"/>
@@ -25,8 +36,8 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
       
       <text x="84" y="46" font-size="40" font-weight="bold" fill="${theme.textPrimary}">Piggy<tspan fill="${theme.accent}">Math</tspan></text>
 
-      <rect x="700" y="8" width="260" height="48" rx="24" fill="${theme.accent}" fill-opacity="0.2" stroke="${theme.accent}" stroke-width="2"/>
-      <text x="830" y="40" font-size="20" font-weight="bold" fill="${theme.accent}" text-anchor="middle">${preset.badge}</text>
+      <rect x="680" y="8" width="280" height="48" rx="24" fill="${theme.accent}" fill-opacity="0.2" stroke="${theme.accent}" stroke-width="2"/>
+      <text x="820" y="40" font-size="18" font-weight="bold" fill="${theme.accent}" text-anchor="middle">${badgeText}</text>
     </g>
 
     <!-- Divider -->
@@ -35,13 +46,13 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
     <!-- Hook Banner -->
     <g transform="translate(60, 185)">
       <rect width="960" height="70" rx="14" fill="${theme.accent}" fill-opacity="0.15" stroke="${theme.accent}" stroke-opacity="0.4" stroke-width="2"/>
-      <text x="30" y="44" font-size="26" font-weight="bold" fill="${theme.accent}">💡 ${preset.hookTitle}</text>
+      <text x="30" y="44" font-size="24" font-weight="bold" fill="${theme.accent}">💡 ${hookTitle}</text>
     </g>
 
     <!-- Main Title -->
     <g transform="translate(60, 310)">
-      <text x="0" y="35" font-size="44" font-weight="bold" fill="${theme.textPrimary}">${preset.mainHeading}</text>
-      <text x="0" y="85" font-size="24" fill="${theme.textSecondary}">${preset.subtitle}</text>
+      <text x="0" y="35" font-size="42" font-weight="bold" fill="${theme.textPrimary}">${mainHeading}</text>
+      <text x="0" y="85" font-size="24" fill="${theme.textSecondary}">${subtitle}</text>
     </g>
 
     <!-- Main Content Card (Bullet Points) -->
@@ -49,15 +60,15 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
       <rect width="960" height="360" rx="20" fill="${theme.cardBg}" stroke="${theme.accent}" stroke-opacity="0.3" stroke-width="2"/>
       
       <!-- Bullet 1 -->
-      <text x="40" y="70" font-size="28" font-weight="bold" fill="${theme.textPrimary}">• 📊 Social Security Tax: 12.4% (Up to income cap)</text>
+      <text x="40" y="70" font-size="26" font-weight="bold" fill="${theme.textPrimary}">• 📊 Social Security Tax: 12.4% (Up to income cap)</text>
       <line x1="40" y1="100" x2="920" y2="100" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="1"/>
 
       <!-- Bullet 2 -->
-      <text x="40" y="150" font-size="28" font-weight="bold" fill="${theme.textPrimary}">• 🏥 Medicare Tax: 2.9% (Unlimited income)</text>
+      <text x="40" y="150" font-size="26" font-weight="bold" fill="${theme.textPrimary}">• 🏥 Medicare Tax: 2.9% (Unlimited income)</text>
       <line x1="40" y1="180" x2="920" y2="180" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="1"/>
 
       <!-- Bullet 3 -->
-      <text x="40" y="230" font-size="28" font-weight="bold" fill="${theme.accent}">• 💡 Total SE Tax = 15.3% ON TOP of regular income tax!</text>
+      <text x="40" y="230" font-size="26" font-weight="bold" fill="${theme.accent}">• 💡 Total SE Tax = 15.3% ON TOP of regular income tax!</text>
 
       <!-- Highlight Formula Box -->
       <rect x="40" y="270" width="880" height="60" rx="10" fill="${theme.accent}" fill-opacity="0.2"/>
@@ -69,7 +80,7 @@ export function renderPostSvg(presetId, themeKey = 'navy') {
       <line x1="0" y1="0" x2="960" y2="0" stroke="${theme.textSecondary}" stroke-opacity="0.2" stroke-width="2"/>
       
       <text x="0" y="45" font-size="32">🐷</text>
-      <text x="50" y="42" font-size="24" font-weight="bold" fill="${theme.accent}">${preset.ctaText}</text>
+      <text x="50" y="42" font-size="24" font-weight="bold" fill="${theme.accent}">${ctaText}</text>
       <text x="50" y="68" font-size="18" fill="${theme.textSecondary}">www.piggymath.com</text>
 
       <!-- Save & Share Badge -->
